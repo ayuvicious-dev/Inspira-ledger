@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspira Ledger — Akuntansi Terintegrasi</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2C2620">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inspira Ledger">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F7F1E8;
+  --paper:#FFFDF9;
+  --ink:#2C2620;
+  --ink-soft:#6B6055;
+  --terracotta:#C1603D;
+  --terracotta-dark:#9E4B2F;
+  --sage:#7C8B6F;
+  --sage-soft:#E4E9DE;
+  --line:#E4DACB;
+  --debit:#2F6B4F;
+  --kredit:#B0432C;
+  --warn:#C88A2A;
+  --shadow: 0 1px 2px rgba(44,38,32,.06), 0 4px 14px rgba(44,38,32,.05);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--cream);color:var(--ink)}
+body{font-size:14px;line-height:1.45}
+h1,h2,h3,h4{font-family:'Poppins',system-ui,sans-serif;margin:0;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:13.5px}
+table{border-collapse:collapse;width:100%}
+::-webkit-scrollbar{height:8px;width:8px}
+::-webkit-scrollbar-thumb{background:#D8CBB4;border-radius:8px}
+
+/* ---- shell ---- */
+#shell{display:flex;min-height:100vh}
+#sidebar{
+  width:236px;flex:none;background:linear-gradient(180deg,#2C2620,#241F1A);
+  color:#EFE7DA;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+#brand{padding:22px 20px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+#brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--terracotta),var(--terracotta-dark));display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:700;color:#fff;font-size:16px;margin-bottom:10px}
+#brand h1{font-size:16.5px;color:#fff}
+#brand p{margin:2px 0 0;font-size:11px;color:#B7AB98;letter-spacing:.04em;text-transform:uppercase}
+nav{padding:10px 10px 20px;flex:1}
+.navgroup{margin-top:14px}
+.navgroup .glabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#8B7F6E;padding:6px 10px 4px;font-weight:600}
+.navbtn{display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;color:#D8CDBC;text-align:left;padding:9px 10px;border-radius:8px;font-size:13.3px;margin-bottom:1px;transition:.12s}
+.navbtn:hover{background:rgba(255,255,255,.06);color:#fff}
+.navbtn.active{background:var(--terracotta);color:#fff;font-weight:600}
+.navbtn .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.55;flex:none}
+
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+#topbar{
+  position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);
+  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+#topbar h2{font-size:19px}
+#topbar .sub{color:var(--ink-soft);font-size:12.5px;margin-top:2px}
+#topbar-actions{display:flex;gap:8px;align-items:center}
+#content{padding:24px 28px 60px;max-width:1360px;width:100%}
+
+/* ---- generic components ---- */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.grid.cols-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1000px){.grid.cols-4{grid-template-columns:repeat(2,1fr)}.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
+
+.kpi .label{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.kpi .value{font-family:'Poppins';font-size:22px;margin-top:6px;font-weight:600}
+.kpi .value.pos{color:var(--debit)}
+.kpi .value.neg{color:var(--kredit)}
+
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--terracotta);color:var(--terracotta-dark)}
+.btn.primary{background:var(--terracotta);color:#fff;border-color:var(--terracotta)}
+.btn.primary:hover{background:var(--terracotta-dark);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--kredit)}
+.btn.small{padding:5px 10px;font-size:12px;border-radius:7px}
+
+.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.section-title h3{font-size:15.5px}
+.section-title .hint{font-size:12px;color:var(--ink-soft)}
+
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+table.sheet{min-width:100%}
+table.sheet thead th{
+  position:sticky;top:0;background:#F1E9DC;color:var(--ink);font-size:11.3px;text-transform:uppercase;letter-spacing:.03em;
+  padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:700;
+}
+table.sheet tbody td{padding:7px 10px;border-bottom:1px solid #EFE7D9;font-size:13px;white-space:nowrap}
+table.sheet tbody tr:hover{background:#FBF6EC}
+table.sheet tbody tr:last-child td{border-bottom:none}
+table.sheet td input,table.sheet td select{border:1px solid transparent;background:transparent;width:100%;padding:4px 5px;border-radius:6px}
+table.sheet td input:hover,table.sheet td select:hover{border-color:var(--line)}
+table.sheet td input:focus,table.sheet td select:focus{outline:none;border-color:var(--terracotta);background:#fff}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.center{text-align:center}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.tag.pribadi{background:#E9E2F3;color:#5B4A8A}
+.tag.a{background:#DDEBE0;color:#2F6B4F}
+.tag.b{background:#FCE8D9;color:#B0602A}
+.tag.c{background:#DCEAF3;color:#2D6B8A}
+.tag.debit{background:#E4EFE8;color:var(--debit)}
+.tag.kredit{background:#F5E1DA;color:var(--kredit)}
+
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.field label{display:block;font-size:11.3px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.field input,.field select,.field textarea{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:13.5px;color:var(--ink);
+}
+.field textarea{resize:vertical;min-height:38px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(193,96,61,.12)}
+
+.tabs2{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:0}
+.tabs2 button{background:none;border:none;padding:9px 14px;font-size:13.3px;font-weight:600;color:var(--ink-soft);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs2 button.active{color:var(--terracotta-dark);border-color:var(--terracotta)}
+
+.empty{padding:34px 16px;text-align:center;color:var(--ink-soft)}
+.empty .big{font-size:26px;margin-bottom:6px}
+
+.recap{background:#F1EADC;border-radius:10px;padding:10px 14px;margin-top:10px;font-size:12.8px;display:flex;gap:22px;flex-wrap:wrap}
+.recap b{font-family:'Poppins';font-size:14.5px}
+
+.badge-balance{padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700}
+.badge-balance.ok{background:#DDEBE0;color:var(--debit)}
+.badge-balance.bad{background:#F5DAD2;color:var(--kredit)}
+
+.rowline{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:6px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.two-col{grid-template-columns:1fr}}
+
+.loc-block{margin-bottom:16px}
+.loc-block h4{font-size:12.8px;color:var(--terracotta-dark);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 10px;font-size:12.3px;margin:0 6px 6px 0}
+.chip.low{border-color:var(--kredit);background:#FBEDE8}
+
+.toast{position:fixed;bottom:20px;right:20px;background:#2C2620;color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;box-shadow:var(--shadow);z-index:50;opacity:0;transform:translateY(8px);transition:.2s}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.hidden{display:none !important}
+.mini{font-size:11.5px;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<div id="shell">
+  <aside id="sidebar">
+    <div id="brand">
+      <div class="mark">IE</div>
+      <h1>Inspira Ledger</h1>
+      <p>Akuntansi Terpadu</p>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <main id="main">
+    <div id="topbar">
+      <div>
+        <h2 id="pagetitle">Dashboard</h2>
+        <div class="sub" id="pagesub">Ringkasan posisi keuangan</div>
+      </div>
+      <div id="topbar-actions">
+        <button class="btn" id="btnExport">⬇ Backup JSON</button>
+        <button class="btn" id="btnImport">⬆ Restore</button>
+        <input type="file" id="fileImport" accept="application/json" class="hidden">
+      </div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================
+   INSPIRA LEDGER — Aplikasi Akuntansi Terpadu (offline, localStorage)
+   ============================================================ */
+const STORAGE_KEY = 'inspira_ledger_db_v1';
+const KEPEMILIKAN = ['Pribadi','Bisnis A','Bisnis B','Bisnis C'];
+const KAT = {
+  AL:'Aset Lancar', PS:'Aset Persediaan', ALL:'Aset Lancar Lainnya', AT:'Aset Tetap',
+  KAT:'Kontra Aset Tetap', ALN:'Aset Lainnya', KW:'Kewajiban', MD:'Modal',
+  PD:'Pendapatan', BPP:'Beban Pokok Penjualan', BO:'Beban Operasional', BL:'Beban Lain'
+};
+const DEBIT_NORMAL = new Set(['AL','PS','ALL','AT','ALN','BPP','BO','BL']);
+const KREDIT_NORMAL = new Set(['KAT','KW','MD','PD']);
+const LOKASI_FREEZER = Array.from({length:13},(_,i)=>'Freezer CH-'+String(i+1).padStart(2,'0'));
+const LOKASI_KULKAS  = Array.from({length:6},(_,i)=>'Kulkas SH-'+String(i+1).padStart(2,'0'));
+const LOKASI_ALL = [...LOKASI_FREEZER, ...LOKASI_KULKAS];
+
+function uid(){ return 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); }
+function fmtRp(n){ n = Number(n)||0; return 'Rp' + n.toLocaleString('id-ID',{maximumFractionDigits:0}); }
+function fmtNum(n,d=2){ n=Number(n)||0; return n.toLocaleString('id-ID',{maximumFractionDigits:d}); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function tagClassKep(k){ return k==='Pribadi'?'pribadi':k==='Bisnis A'?'a':k==='Bisnis B'?'b':'c'; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window.__tt); window.__tt=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ---------------- STATE ---------------- */
+let DB = null;
+
+function freshDB(){
+  return { coa:[], jurnal:[], pembelian:[], penjualan:[], biaya:[], produk:[], resep:[], budgeting:[], counters:{} };
+}
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){ try{ DB = JSON.parse(raw); }catch(e){ DB = freshDB(); } }
+  else { DB = freshDB(); }
+  if(!DB.coa || DB.coa.length===0){ seedCOA(); }
+  if(!DB.counters) DB.counters = {};
+  save();
+}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
+
+function nextKode(prefix){
+  DB.counters[prefix] = (DB.counters[prefix]||0)+1;
+  return prefix + '-' + String(DB.counters[prefix]).padStart(3,'0');
+}
+
+/* ---------------- COA SEED ---------------- */
+function addAkun(prefix, nama, kepemilikan, keterangan, extra){
+  const akun = { id:uid(), kode:nextKode(prefix), kategori:prefix, nama, kepemilikan, keterangan: keterangan||'', ...(extra||{}) };
+  DB.coa.push(akun);
+  return akun;
+}
+
+function seedCOA(){
+  DB.coa = []; DB.counters = {};
+
+  // ---- Aset Lancar (kas/bank) ----
+  const kasPribadi = ['Kas Tunai Ayu','Kas Tunai Reza','Bank BCA Ayu','Bank BCA Reza','Bank BNI Reza','Seabank Ayu','Shopeepay Ayu','Shopeepay Reza','Gopay Ayu'];
+  kasPribadi.forEach(n=> addAkun('AL', n, 'Pribadi', 'Kas/bank harian'));
+  ['Bisnis A','Bisnis B','Bisnis C'].forEach(b=>{
+    addAkun('AL', 'Kas Tunai '+b, b, 'Kas operasional usaha');
+    addAkun('AL', 'Bank '+b, b, 'Rekening operasional usaha');
+  });
+
+  // ---- Aset Persediaan ----
+  const persediaanJenis = ['Persediaan Makanan Mentah','Persediaan Makanan Setengah Jadi','Persediaan Makanan Jadi'];
+  KEPEMILIKAN.forEach(kep=>{
+    persediaanJenis.forEach(n=> addAkun('PS', n, kep, 'Nilai persediaan menurut kartu stok, lokasi diatur di sheet Persediaan'));
+  });
+
+  // ---- Aset Lancar Lainnya ----
+  const alLainnya = ['Sewa Dibayar Di Muka - Kontrakan','Sewa Dibayar Di Muka - Lainnya','Biaya Dibayar Di Muka - Aplikasi Pro Yearly','Biaya Dibayar Di Muka - Lainnya A','Biaya Dibayar Di Muka - Lainnya B','Biaya Dibayar Di Muka - Lainnya C'];
+  KEPEMILIKAN.forEach(kep=>{ alLainnya.forEach(n=> addAkun('ALL', n, kep, 'Diamortisasi bertahap ke beban')); });
+
+  // ---- Aset Lainnya (investasi) ----
+  ['Investasi BCA Reza','Investasi BRI Reza','Investasi Valas - Yen','Investasi Valas - CHF','Investasi Valas - SGD','Investasi Valas - Lainnya A','Investasi Valas - Lainnya B','Investasi Valas - Lainnya C']
+    .forEach(n=> addAkun('ALN', n, 'Pribadi', 'Aset investasi jangka panjang'));
+
+  // ---- Aset Tetap ----
+  const asetTetap = ['Aset Tetap - Mesin','Aset Tetap - Peralatan','Aset Tetap - Bangunan Rumah','Aset Tetap - Bangunan Lain','Aset Tetap - Kendaraan Motor','Aset Tetap - Kendaraan Sepeda','Aset Tetap - Kendaraan Mobil','Aset Tetap - Kendaraan Lain','Aset Tetap - Logam Mulia','Aset Tetap - Perhiasan'];
+  KEPEMILIKAN.forEach(kep=>{ asetTetap.forEach(n=> addAkun('AT', n, kep, '')); });
+
+  // ---- Kontra Aset Tetap (akumulasi penyusutan, utk aset yg disusutkan) ----
+  const disusutkan = ['Mesin','Peralatan','Bangunan Rumah','Bangunan Lain','Kendaraan Motor','Kendaraan Sepeda','Kendaraan Mobil','Kendaraan Lain'];
+  KEPEMILIKAN.forEach(kep=>{ disusutkan.forEach(n=> addAkun('KAT', 'Akumulasi Penyusutan - '+n, kep, 'Kontra akun aset tetap')); });
+
+  // ---- Kewajiban ----
+  const kewajiban = ['Utang Usaha','Utang Bank','Utang Kartu Kredit','Utang Lainnya'];
+  KEPEMILIKAN.forEach(kep=>{ kewajiban.forEach(n=> addAkun('KW', n, kep, '')); });
+
+  // ---- Modal ----
+  addAkun('MD','Modal Pribadi','Pribadi','');
+  addAkun('MD','Prive Pribadi','Pribadi','Pengambilan pribadi');
+  ['Bisnis A','Bisnis B','Bisnis C'].forEach(b=>{
+    addAkun('MD','Modal '+b, b, '');
+    addAkun('MD','Prive '+b, b, 'Pengambilan pemilik dari usaha');
+  });
+
+  // ---- Pendapatan ----
+  addAkun('PD','Pendapatan Jasa','Pribadi','');
+  ['Bisnis A','Bisnis B','Bisnis C'].forEach(b=> addAkun('PD','Pendapatan '+b, b, 'Pendapatan usaha'));
+  ['Bisnis A','Bisnis B','Bisnis C'].forEach(b=> addAkun('PD','Pendapatan Pasif '+b.slice(-1), 'Pribadi', 'Passive income terkait '+b));
+
+  // ---- Beban Pokok Penjualan (kebutuhan wajib bulanan) ----
+  const bpp = ['Beban Konsumsi','Beban Sewa Rumah','Beban Utilitas','Beban Listrik','Beban Bensin'];
+  KEPEMILIKAN.forEach(kep=>{ bpp.forEach(n=> addAkun('BPP', n, kep, 'Kebutuhan wajib bulanan')); });
+
+  // ---- Beban Operasional (Pribadi, 20 akun tetap) ----
+  const boPribadi = ['Beban Perbaikan','Beban Olahraga','Beban Laundry','Beban Perlengkapan Rumah','Beban Parkir','Beban Entertain','Beban Gojek','Beban Kereta','Beban Peralatan Rumah','Beban Obat-obatan','Beban Tagihan BPJS','Beban Langganan Aplikasi Pro Yearly','Beban Skincare','Beban Bodycare','Beban Nailcare','Beban Haircare','Beban Sandang','Beban Konsumsi Makanan Instan','Beban Konsumsi Minuman Instan','Beban Personal','Beban Make Up'];
+  boPribadi.forEach(n=> addAkun('BO', n, 'Pribadi', ''));
+
+  // ---- Beban Operasional (15 akun baru per Bisnis A/B/C) ----
+  const boBisnis = ['Beban Marketing & Promosi','Beban Kemasan','Beban Ongkos Kirim','Beban Platform & Komisi Marketplace','Beban Internet & Pulsa Usaha','Beban Peralatan Kerja','Beban Perawatan Alat','Beban Listrik Usaha','Beban Gaji Karyawan','Beban Transportasi Usaha','Beban Cetak & ATK','Beban Sewa Tempat Usaha','Beban Pelatihan & Pengembangan','Beban Pajak Usaha','Beban Lain-lain Operasional'];
+  ['Bisnis A','Bisnis B','Bisnis C'].forEach(b=>{ boBisnis.forEach(n=> addAkun('BO', n, b, '')); });
+
+  // ---- Beban Lain ----
+  KEPEMILIKAN.forEach(kep=>{ ['Beban Donasi','Beban Lain-lain'].forEach(n=> addAkun('BL', n, kep, '')); });
+}
+
+/* ---------------- JOURNAL ENGINE ---------------- */
+// posts a balanced pair (debit account, credit account) for a given nominal
+function postJurnal({tanggal, keterangan, debitId, kreditId, nominal, sumber, ref}){
+  if(!debitId || !kreditId || !nominal || Number(nominal)<=0) return null;
+  const entry = { id:uid(), no: (DB.jurnal.length+1), tanggal: tanggal||todayStr(), keterangan: keterangan||'', debitId, kreditId, nominal:Number(nominal), sumber: sumber||'Jurnal Umum', ref: ref||'' };
+  DB.jurnal.push(entry);
+  return entry;
+}
+function deleteJurnalByRef(ref){ DB.jurnal = DB.jurnal.filter(j=>j.ref!==ref); }
+
+function akunById(id){ return DB.coa.find(a=>a.id===id); }
+function normalIsDebit(kategori){ return DEBIT_NORMAL.has(kategori); }
+
+// running balance for one account, purely from jurnal
+function saldoAkun(akunId){
+  const akun = akunById(akunId);
+  if(!akun) return 0;
+  let debit=0, kredit=0;
+  DB.jurnal.forEach(j=>{
+    if(j.debitId===akunId) debit+=j.nominal;
+    if(j.kreditId===akunId) kredit+=j.nominal;
+  });
+  return normalIsDebit(akun.kategori) ? (debit-kredit) : (kredit-debit);
+}
+
+function sumByKategoriKepemilikan(kategori, kepemilikan){
+  return DB.coa.filter(a=>a.kategori===kategori && (!kepemilikan||a.kepemilikan===kepemilikan))
+    .reduce((s,a)=> s+saldoAkun(a.id), 0);
+}
+
+/* Laba/rugi bersih per kepemilikan (Pendapatan - BPP - BO - BL) */
+function labaRugiPerKepemilikan(kep){
+  const pd = sumByKategoriKepemilikan('PD', kep);
+  const bpp = sumByKategoriKepemilikan('BPP', kep);
+  const bo = sumByKategoriKepemilikan('BO', kep);
+  const bl = sumByKategoriKepemilikan('BL', kep);
+  return pd - bpp - bo - bl;
+}
+
+/* ---------------- NAVIGATION ---------------- */
+const NAV = [
+  {group:'Ringkasan', items:[
+    {id:'dashboard', label:'Dashboard'},
+  ]},
+  {group:'Data Master', items:[
+    {id:'coa', label:'Chart of Accounts'},
+    {id:'produk', label:'Produk & Resep'},
+  ]},
+  {group:'Transaksi', items:[
+    {id:'jurnal', label:'Jurnal Umum'},
+    {id:'kasmasuk', label:'Terima Uang'},
+    {id:'kaskeluar', label:'Kirim Uang'},
+    {id:'transfer', label:'Transfer Uang'},
+    {id:'biaya', label:'Biaya'},
+    {id:'pembelian', label:'Pembelian'},
+    {id:'penjualan', label:'Penjualan / Pemakaian'},
+  ]},
+  {group:'Persediaan', items:[
+    {id:'persediaan', label:'Persediaan'},
+    {id:'budgeting', label:'Budgeting'},
+  ]},
+  {group:'Laporan', items:[
+    {id:'neraca', label:'Neraca'},
+    {id:'labarugi', label:'Laba Rugi'},
+    {id:'perubahanmodal', label:'Perubahan Modal'},
+    {id:'aruskas', label:'Arus Kas'},
+  ]},
+];
+let currentTab = 'dashboard';
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV.map(g=>`
+    <div class="navgroup">
+      <div class="glabel">${g.group}</div>
+      ${g.items.map(it=>`<button class="navbtn ${currentTab===it.id?'active':''}" data-tab="${it.id}"><span class="dot"></span>${it.label}</button>`).join('')}
+    </div>`).join('');
+  nav.querySelectorAll('.navbtn').forEach(b=> b.addEventListener('click', ()=> switchTab(b.dataset.tab)));
+}
+
+const TITLES = {
+  dashboard:['Dashboard','Ringkasan posisi keuangan semua entitas'],
+  coa:['Chart of Accounts','Daftar akun, kategori neraca & kepemilikan'],
+  produk:['Produk & Resep','Master barang dan resep pemakaian bahan'],
+  jurnal:['Jurnal Umum','Input debit-kredit bebas untuk transaksi apapun'],
+  kasmasuk:['Terima Uang','Uang masuk ke kas/bank'],
+  kaskeluar:['Kirim Uang','Uang keluar dari kas/bank'],
+  transfer:['Transfer Uang','Perpindahan antar kas/bank'],
+  biaya:['Biaya','Pencatatan beban, termasuk amortisasi'],
+  pembelian:['Pembelian','Belanja barang — otomatis menambah persediaan'],
+  penjualan:['Penjualan / Pemakaian','Nilai Rp0 — otomatis memindahkan persediaan ke beban pokok'],
+  persediaan:['Persediaan','Kartu stok otomatis per lokasi penyimpanan'],
+  budgeting:['Budgeting','Anggaran vs realisasi belanja bahan'],
+  neraca:['Neraca','Posisi aset, kewajiban & modal'],
+  labarugi:['Laba Rugi','Pendapatan dikurangi beban per entitas'],
+  perubahanmodal:['Laporan Perubahan Modal','Modal awal, laba berjalan, prive, modal akhir'],
+  aruskas:['Laporan Arus Kas','Pergerakan kas/bank per aktivitas'],
+};
+
+function switchTab(id){
+  currentTab = id;
+  document.getElementById('pagetitle').textContent = TITLES[id][0];
+  document.getElementById('pagesub').textContent = TITLES[id][1];
+  renderNav();
+  renderContent();
+}
+
+function renderContent(){
+  const c = document.getElementById('content');
+  c.innerHTML = '';
+  const fn = RENDERERS[currentTab];
+  if(fn) fn(c); else c.innerHTML = '<div class="empty">Belum tersedia</div>';
+}
+
+const RENDERERS = {};
+
+/* ================= DASHBOARD ================= */
+RENDERERS.dashboard = function(c){
+  const totalAset = ['AL','PS','ALL','AT','ALN'].reduce((s,k)=>s+sumByKategoriKepemilikan(k),0) + sumByKategoriKepemilikan('KAT');
+  const totalKewajiban = sumByKategoriKepemilikan('KW');
+  const labaTotal = KEPEMILIKAN.reduce((s,k)=>s+labaRugiPerKepemilikan(k),0);
+  const totalModal = sumByKategoriKepemilikan('MD') + labaTotal;
+  const totalKas = DB.coa.filter(a=>a.kategori==='AL').reduce((s,a)=>s+saldoAkun(a.id),0);
+
+  let html = `<div class="grid cols-4">
+    <div class="card kpi"><div class="label">Total Aset</div><div class="value">${fmtRp(totalAset)}</div></div>
+    <div class="card kpi"><div class="label">Total Kewajiban</div><div class="value">${fmtRp(totalKewajiban)}</div></div>
+    <div class="card kpi"><div class="label">Total Modal</div><div class="value">${fmtRp(totalModal)}</div></div>
+    <div class="card kpi"><div class="label">Posisi Kas & Bank</div><div class="value ${totalKas>=0?'pos':'neg'}">${fmtRp(totalKas)}</div></div>
+  </div>`;
+
+  html += `<div class="grid cols-4" style="margin-top:14px">`;
+  KEPEMILIKAN.forEach(kep=>{
+    const lr = labaRugiPerKepemilikan(kep);
+    html += `<div class="card kpi"><div class="label">Laba/Rugi — ${kep}</div><div class="value ${lr>=0?'pos':'neg'}">${fmtRp(lr)}</div></div>`;
+  });
+  html += `</div>`;
+
+  const lowStock = DB.produk.filter(p=>p.hampirHabis);
+  html += `<div class="card" style="margin-top:14px">
+    <div class="section-title"><h3>Stok akan habis</h3><span class="hint">${lowStock.length} item ditandai</span></div>
+    ${lowStock.length? lowStock.map(p=>`<span class="chip low">⚠ ${p.nama} — sisa ${fmtNum(p.stok)} ${p.satuan}</span>`).join('') : '<div class="mini">Belum ada item ditandai akan habis. Tandai lewat sheet Persediaan.</div>'}
+  </div>`;
+
+  const recentJ = [...DB.jurnal].slice(-8).reverse();
+  html += `<div class="card" style="margin-top:14px">
+    <div class="section-title"><h3>Transaksi terbaru</h3><span class="hint">8 entri terakhir</span></div>
+    <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Debit</th><th>Kredit</th><th>Nominal</th><th>Sumber</th></tr></thead><tbody>
+    ${recentJ.length? recentJ.map(j=>`<tr><td>${j.tanggal}</td><td>${j.keterangan||'-'}</td><td>${akunById(j.debitId)?.nama||'?'}</td><td>${akunById(j.kreditId)?.nama||'?'}</td><td class="num">${fmtRp(j.nominal)}</td><td>${j.sumber}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">Belum ada transaksi</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+
+  c.innerHTML = html;
+};
+
+/* ================= COA ================= */
+let coaFilterKategori = '';
+RENDERERS.coa = function(c){
+  const filtered = DB.coa.filter(a=> !coaFilterKategori || a.kategori===coaFilterKategori);
+  let html = `<div class="section-title">
+    <h3>Daftar Akun (${DB.coa.length})</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="coaFilter" class="field" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px">
+        <option value="">Semua kategori</option>
+        ${Object.entries(KAT).map(([k,v])=>`<option value="${k}" ${coaFilterKategori===k?'selected':''}>${v}</option>`).join('')}
+      </select>
+      <button class="btn primary" id="btnAddAkun">+ Tambah Akun</button>
+    </div>
+  </div>
+  <div class="tablewrap"><table class="sheet"><thead><tr>
+    <th>Kode</th><th>Nama Akun</th><th>Kategori</th><th>Kepemilikan</th><th>Keterangan</th><th>Saldo</th><th></th>
+  </tr></thead><tbody>`;
+  filtered.forEach(a=>{
+    html += `<tr data-id="${a.id}">
+      <td class="mini">${a.kode}</td>
+      <td><input class="edit-nama" value="${a.nama.replace(/"/g,'&quot;')}"></td>
+      <td><span class="mini">${KAT[a.kategori]}</span></td>
+      <td><select class="edit-kep">${KEPEMILIKAN.map(k=>`<option ${a.kepemilikan===k?'selected':''}>${k}</option>`).join('')}</select></td>
+      <td><input class="edit-ket" value="${(a.keterangan||'').replace(/"/g,'&quot;')}"></td>
+      <td class="num">${fmtRp(saldoAkun(a.id))}</td>
+      <td><button class="btn small danger btnDelAkun">Hapus</button></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  c.innerHTML = html;
+
+  document.getElementById('coaFilter').addEventListener('change', e=>{ coaFilterKategori = e.target.value; renderContent(); });
+  document.getElementById('btnAddAkun').addEventListener('click', ()=>{
+    const kategori = prompt('Kode kategori:\nAL, PS, ALL, AT, KAT, ALN, KW, MD, PD, BPP, BO, BL', 'BO');
+    if(!kategori || !KAT[kategori.toUpperCase()]) return toast('Kategori tidak valid');
+    const nama = prompt('Nama akun baru:'); if(!nama) return;
+    const kep = prompt('Kepemilikan (Pribadi/Bisnis A/Bisnis B/Bisnis C):','Pribadi');
+    addAkun(kategori.toUpperCase(), nama, KEPEMILIKAN.includes(kep)?kep:'Pribadi', '');
+    save(); renderContent(); toast('Akun ditambahkan');
+  });
+  c.querySelectorAll('tr[data-id]').forEach(row=>{
+    const id = row.dataset.id;
+    row.querySelector('.edit-nama').addEventListener('change', e=>{ akunById(id).nama=e.target.value; save(); });
+    row.querySelector('.edit-kep').addEventListener('change', e=>{ akunById(id).kepemilikan=e.target.value; save(); renderContent(); });
+    row.querySelector('.edit-ket').addEventListener('change', e=>{ akunById(id).keterangan=e.target.value; save(); });
+    row.querySelector('.btnDelAkun').addEventListener('click', ()=>{
+      if(DB.jurnal.some(j=>j.debitId===id||j.kreditId===id)) return toast('Tidak bisa hapus — akun sudah dipakai transaksi');
+      if(!confirm('Hapus akun ini?')) return;
+      DB.coa = DB.coa.filter(a=>a.id!==id); save(); renderContent();
+    });
+  });
+};
+
+/* ================= PRODUK & RESEP ================= */
+let produkSubtab = 'produk';
+function kategoriProdukList(){ return ['Bahan Mentah','Setengah Jadi','Menu Jadi']; }
+function prefixKategoriProduk(k){ return k==='Bahan Mentah'?'BM':k==='Setengah Jadi'?'SJ':'MJ'; }
+
+RENDERERS.produk = function(c){
+  let html = `<div class="tabs2">
+    <button data-t="produk" class="${produkSubtab==='produk'?'active':''}">Master Produk</button>
+    <button data-t="resep" class="${produkSubtab==='resep'?'active':''}">Resep</button>
+  </div><div id="produkBody"></div>`;
+  c.innerHTML = html;
+  c.querySelectorAll('.tabs2 button').forEach(b=> b.addEventListener('click', ()=>{ produkSubtab=b.dataset.t; renderContent(); }));
+  const body = document.getElementById('produkBody');
+  if(produkSubtab==='produk') renderProdukTable(body); else renderResepTable(body);
+};
+
+function renderProdukTable(c){
+  let html = `<div class="section-title"><h3>Master Produk (${DB.produk.length})</h3>
+    <button class="btn primary" id="btnAddProduk">+ Tambah Produk</button></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr>
+    <th>Kode</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Kepemilikan</th>
+    <th>Total Qty Beli</th><th>Total Rp Beli</th><th>Harga/Satuan (avg)</th><th>Harga Jual</th><th>Stok</th><th>Nilai Stok</th><th></th>
+  </tr></thead><tbody>`;
+  DB.produk.forEach(p=>{
+    html += `<tr data-id="${p.id}">
+      <td class="mini">${p.kode}</td>
+      <td><input class="ed-nama" value="${p.nama.replace(/"/g,'&quot;')}"></td>
+      <td><select class="ed-kat">${kategoriProdukList().map(k=>`<option ${p.kategori===k?'selected':''}>${k}</option>`).join('')}</select></td>
+      <td><select class="ed-satuan"><option ${p.satuan==='pcs'?'selected':''}>pcs</option><option ${p.satuan==='gr'?'selected':''}>gr</option></select></td>
+      <td><select class="ed-kep">${KEPEMILIKAN.map(k=>`<option ${p.kepemilikan===k?'selected':''}>${k}</option>`).join('')}</select></td>
+      <td class="num">${fmtNum(p.runQty||0)}</td>
+      <td class="num">${fmtRp(p.runTotal||0)}</td>
+      <td class="num">${fmtRp(p.hargaBeliPerSatuan||0)}</td>
+      <td><input class="ed-hjual num" style="text-align:right" type="number" value="${p.hargaJual||0}"></td>
+      <td class="num">${fmtNum(p.stok||0)}</td>
+      <td class="num">${fmtRp((p.stok||0)*(p.hargaBeliPerSatuan||0))}</td>
+      <td><button class="btn small danger btnDel">Hapus</button></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div><div class="mini" style="margin-top:8px">Harga/satuan dihitung otomatis (rata-rata tertimbang) dari setiap transaksi Pembelian. Stok berkurang otomatis lewat Penjualan/Resep.</div>`;
+  c.innerHTML = html;
+
+  document.getElementById('btnAddProduk').addEventListener('click', ()=>{
+    const nama = prompt('Nama produk baru:'); if(!nama) return;
+    const kategori = 'Bahan Mentah';
+    DB.produk.push({ id:uid(), kode:nextKode(prefixKategoriProduk(kategori)), nama, kategori, satuan:'pcs', kepemilikan:'Pribadi', runQty:0, runTotal:0, hargaBeliPerSatuan:0, hargaJual:0, stok:0, hampirHabis:false, lokasi:'' });
+    save(); renderContent(); toast('Produk ditambahkan');
+  });
+  c.querySelectorAll('tr[data-id]').forEach(row=>{
+    const id = row.dataset.id; const p = DB.produk.find(x=>x.id===id);
+    row.querySelector('.ed-nama').addEventListener('change', e=>{ p.nama=e.target.value; save(); });
+    row.querySelector('.ed-kat').addEventListener('change', e=>{ p.kategori=e.target.value; save(); });
+    row.querySelector('.ed-satuan').addEventListener('change', e=>{ p.satuan=e.target.value; save(); });
+    row.querySelector('.ed-kep').addEventListener('change', e=>{ p.kepemilikan=e.target.value; save(); });
+    row.querySelector('.ed-hjual').addEventListener('change', e=>{ p.hargaJual=Number(e.target.value)||0; save(); });
+    row.querySelector('.btnDel').addEventListener('click', ()=>{
+      if(!confirm('Hapus produk ini?')) return;
+      DB.produk = DB.produk.filter(x=>x.id!==id); save(); renderContent();
+    });
+  });
+}
+
+function renderResepTable(c){
+  let html = `<div class="section-title"><h3>Resep Menu (${DB.resep.length})</h3>
+    <button class="btn primary" id="btnAddResep">+ Tambah Resep</button></div>`;
+  if(DB.resep.length===0){ html += `<div class="empty"><div class="big">🍲</div>Belum ada resep. Resep menghubungkan menu ke bahan-bahan supaya persediaan otomatis berkurang saat Penjualan/Pemakaian dicatat.</div>`; }
+  DB.resep.forEach(r=>{
+    html += `<div class="card" style="margin-bottom:12px" data-rid="${r.id}">
+      <div class="section-title"><h3 style="font-size:14px">${r.namaMenu}</h3>
+      <div style="display:flex;gap:6px"><button class="btn small btnAddBahan">+ Bahan</button><button class="btn small danger btnDelResep">Hapus Resep</button></div></div>
+      <div class="tablewrap"><table class="sheet"><thead><tr><th>Bahan</th><th>Qty per porsi</th><th>Satuan</th><th></th></tr></thead><tbody>
+      ${r.bahan.map((b,i)=>{
+        const prod = DB.produk.find(p=>p.id===b.produkId);
+        return `<tr><td>${prod?prod.nama:'(produk dihapus)'}</td><td class="num">${b.qty}</td><td>${prod?prod.satuan:''}</td><td><button class="btn small danger btnDelBahan" data-i="${i}">Hapus</button></td></tr>`;
+      }).join('')}
+      </tbody></table></div>
+    </div>`;
+  });
+  c.innerHTML = html;
+
+  document.getElementById('btnAddResep').addEventListener('click', ()=>{
+    const nama = prompt('Nama menu:'); if(!nama) return;
+    DB.resep.push({ id:uid(), namaMenu:nama, bahan:[] });
+    save(); renderContent();
+  });
+  c.querySelectorAll('[data-rid]').forEach(card=>{
+    const rid = card.dataset.rid; const r = DB.resep.find(x=>x.id===rid);
+    card.querySelector('.btnDelResep').addEventListener('click', ()=>{ if(!confirm('Hapus resep?'))return; DB.resep=DB.resep.filter(x=>x.id!==rid); save(); renderContent(); });
+    card.querySelector('.btnAddBahan').addEventListener('click', ()=>{
+      if(DB.produk.length===0) return toast('Tambah produk (bahan) dulu di Master Produk');
+      const list = DB.produk.map((p,i)=>`${i+1}. ${p.nama}`).join('\n');
+      const idx = prompt('Pilih nomor bahan:\n'+list); if(!idx) return;
+      const prod = DB.produk[Number(idx)-1]; if(!prod) return toast('Nomor tidak valid');
+      const qty = Number(prompt('Qty per porsi ('+prod.satuan+'):','1'))||0;
+      r.bahan.push({ produkId: prod.id, qty }); save(); renderContent();
+    });
+    card.querySelectorAll('.btnDelBahan').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ r.bahan.splice(Number(btn.dataset.i),1); save(); renderContent(); });
+    });
+  });
+}
+
+/* ================= HELPERS: account pickers ================= */
+function akunOptions(filterFn){
+  return DB.coa.filter(filterFn||(()=>true))
+    .map(a=>`<option value="${a.id}">${a.nama} — ${a.kepemilikan} (${KAT[a.kategori]})</option>`).join('');
+}
+function isKasBank(a){ return a.kategori==='AL'; }
+
+/* ================= JURNAL UMUM ================= */
+RENDERERS.jurnal = function(c){
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Tanggal</label><input type="date" id="jTgl" value="${todayStr()}"></div>
+      <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="jKet" placeholder="Deskripsi transaksi"></div>
+      <div class="field"><label>Nominal</label><input type="number" id="jNom" placeholder="0"></div>
+    </div>
+    <div class="formgrid">
+      <div class="field" style="grid-column:span 2"><label>Akun Debit</label><select id="jDebit"><option value="">— pilih akun —</option>${akunOptions()}</select></div>
+      <div class="field" style="grid-column:span 2"><label>Akun Kredit</label><select id="jKredit"><option value="">— pilih akun —</option>${akunOptions()}</select></div>
+    </div>
+    <button class="btn primary" id="btnPostJurnal">Posting Jurnal</button>
+  </div>
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Riwayat Jurnal (${DB.jurnal.length})</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Debit</th><th>Kredit</th><th>Nominal</th><th>Sumber</th><th></th></tr></thead><tbody>
+  ${[...DB.jurnal].reverse().map(j=>`<tr><td>${j.no}</td><td>${j.tanggal}</td><td>${j.keterangan||'-'}</td><td><span class="tag debit">${akunById(j.debitId)?.nama||'?'}</span></td><td><span class="tag kredit">${akunById(j.kreditId)?.nama||'?'}</span></td><td class="num">${fmtRp(j.nominal)}</td><td class="mini">${j.sumber}</td><td>${j.sumber==='Jurnal Umum'?`<button class="btn small danger btnDelJ" data-id="${j.id}">Hapus</button>`:''}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Belum ada jurnal</td></tr>'}
+  </tbody></table></div></div>`;
+  c.innerHTML = html;
+  document.getElementById('btnPostJurnal').addEventListener('click', ()=>{
+    const debitId=jDebit.value, kreditId=jKredit.value, nominal=Number(jNom.value);
+    if(!debitId||!kreditId) return toast('Pilih akun debit & kredit');
+    if(debitId===kreditId) return toast('Akun debit & kredit tidak boleh sama');
+    if(!nominal||nominal<=0) return toast('Isi nominal');
+    postJurnal({tanggal:jTgl.value, keterangan:jKet.value, debitId, kreditId, nominal, sumber:'Jurnal Umum'});
+    save(); renderContent(); toast('Jurnal diposting');
+  });
+  c.querySelectorAll('.btnDelJ').forEach(b=> b.addEventListener('click', ()=>{
+    DB.jurnal = DB.jurnal.filter(j=>j.id!==b.dataset.id); save(); renderContent();
+  }));
+};
+
+/* ================= TERIMA / KIRIM / TRANSFER UANG ================= */
+function simpleCashForm(c, opts){
+  // opts: {kasLabel, lawanLabel, lawanFilter, debitIsKas, sumber}
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Tanggal</label><input type="date" id="fTgl" value="${todayStr()}"></div>
+      <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="fKet" placeholder="Deskripsi"></div>
+      <div class="field"><label>Nominal</label><input type="number" id="fNom" placeholder="0"></div>
+    </div>
+    <div class="formgrid">
+      <div class="field" style="grid-column:span 2"><label>${opts.kasLabel}</label><select id="fKas"><option value="">— pilih akun kas/bank —</option>${akunOptions(isKasBank)}</select></div>
+      <div class="field" style="grid-column:span 2"><label>${opts.lawanLabel}</label><select id="fLawan"><option value="">— pilih akun —</option>${akunOptions(opts.lawanFilter)}</select></div>
+    </div>
+    <button class="btn primary" id="btnPostSimple">Simpan Transaksi</button>
+  </div>
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Riwayat (${opts.sumber})</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Akun Kas/Bank</th><th>Akun Lawan</th><th>Nominal</th><th></th></tr></thead><tbody>
+  ${[...DB.jurnal].filter(j=>j.sumber===opts.sumber).reverse().map(j=>{
+    const kasAkun = opts.debitIsKas?akunById(j.debitId):akunById(j.kreditId);
+    const lawanAkun = opts.debitIsKas?akunById(j.kreditId):akunById(j.debitId);
+    return `<tr><td>${j.tanggal}</td><td>${j.keterangan||'-'}</td><td>${kasAkun?.nama||'?'}</td><td>${lawanAkun?.nama||'?'}</td><td class="num">${fmtRp(j.nominal)}</td><td><button class="btn small danger btnDelJ" data-id="${j.id}">Hapus</button></td></tr>`;
+  }).join('') || `<tr><td colspan="6" class="empty">Belum ada transaksi</td></tr>`}
+  </tbody></table></div></div>`;
+  c.innerHTML = html;
+  document.getElementById('btnPostSimple').addEventListener('click', ()=>{
+    const kasId=fKas.value, lawanId=fLawan.value, nominal=Number(fNom.value);
+    if(!kasId||!lawanId) return toast('Lengkapi akun');
+    if(!nominal||nominal<=0) return toast('Isi nominal');
+    const debitId = opts.debitIsKas?kasId:lawanId;
+    const kreditId = opts.debitIsKas?lawanId:kasId;
+    postJurnal({tanggal:fTgl.value, keterangan:fKet.value, debitId, kreditId, nominal, sumber:opts.sumber});
+    save(); renderContent(); toast('Tersimpan');
+  });
+  c.querySelectorAll('.btnDelJ').forEach(b=> b.addEventListener('click', ()=>{
+    DB.jurnal = DB.jurnal.filter(j=>j.id!==b.dataset.id); save(); renderContent();
+  }));
+}
+
+RENDERERS.kasmasuk = function(c){
+  simpleCashForm(c, { kasLabel:'Diterima ke Kas/Bank', lawanLabel:'Sumber dana (Pendapatan/Piutang/Modal)',
+    lawanFilter:a=>['PD','KW','MD','ALN'].includes(a.kategori), debitIsKas:true, sumber:'Terima Uang' });
+};
+RENDERERS.kaskeluar = function(c){
+  simpleCashForm(c, { kasLabel:'Dibayar dari Kas/Bank', lawanLabel:'Tujuan dana (Beban/Aset/Kewajiban)',
+    lawanFilter:a=>['BPP','BO','BL','AT','ALL','ALN','KW','MD'].includes(a.kategori), debitIsKas:false, sumber:'Kirim Uang' });
+};
+RENDERERS.transfer = function(c){
+  simpleCashForm(c, { kasLabel:'Dari akun', lawanLabel:'Ke akun', lawanFilter:isKasBank, debitIsKas:false, sumber:'Transfer Uang' });
+};
+
+/* ================= BIAYA (dengan amortisasi) ================= */
+RENDERERS.biaya = function(c){
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Tanggal</label><input type="date" id="bTgl" value="${todayStr()}"></div>
+      <div class="field"><label>Dibayar melalui</label><select id="bBayar"><option value="">— pilih —</option>${akunOptions(a=>['AL','ALL'].includes(a.kategori))}</select></div>
+      <div class="field"><label>Nama Beban</label><select id="bBeban"><option value="">— pilih akun beban —</option>${akunOptions(a=>['BPP','BO','BL'].includes(a.kategori))}</select></div>
+      <div class="field"><label>Nominal</label><input type="number" id="bNom" placeholder="0"></div>
+    </div>
+    <div class="formgrid">
+      <div class="field" style="grid-column:span 2"><label>Keterangan</label><input id="bKet" placeholder="Detail beban"></div>
+      <div class="field"><label><input type="checkbox" id="bAmor" style="width:auto;margin-right:6px">Amortisasi bertahap?</label></div>
+      <div class="field" id="bBulanWrap" style="display:none"><label>Jumlah bulan</label><input type="number" id="bBulan" value="12" min="1"></div>
+    </div>
+    <button class="btn primary" id="btnPostBiaya">Simpan Biaya</button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Riwayat Biaya (${DB.biaya.length})</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Dibayar melalui</th><th>Beban</th><th>Keterangan</th><th>Nominal</th><th>Amortisasi</th><th></th></tr></thead><tbody>
+  ${[...DB.biaya].reverse().map(b=>`<tr><td>${b.tanggal}</td><td>${akunById(b.bayarId)?.nama||'?'}</td><td>${akunById(b.bebanId)?.nama||'?'}</td><td>${b.keterangan||'-'}</td><td class="num">${fmtRp(b.nominal)}</td><td>${b.amortisasi?`${b.bulanTerposting||0}/${b.jumlahBulan} bln`:'-'}</td><td>${b.amortisasi && (b.bulanTerposting||0)<b.jumlahBulan ? `<button class="btn small btnPostingAmor" data-id="${b.id}">Posting bulan ini</button>`:''}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Belum ada biaya tercatat</td></tr>'}
+  </tbody></table></div></div>`;
+  c.innerHTML = html;
+
+  document.getElementById('bAmor').addEventListener('change', e=>{ document.getElementById('bBulanWrap').style.display = e.target.checked?'block':'none'; });
+
+  document.getElementById('btnPostBiaya').addEventListener('click', ()=>{
+    const bayarId=bBayar.value, bebanId=bBeban.value, nominal=Number(bNom.value), amortisasi=bAmor.checked, jumlahBulan=Number(bBulan.value)||12;
+    if(!bayarId||!bebanId) return toast('Lengkapi akun');
+    if(!nominal||nominal<=0) return toast('Isi nominal');
+    const biayaObj = { id:uid(), tanggal:bTgl.value, bayarId, bebanId, keterangan:bKet.value, nominal, amortisasi, jumlahBulan: amortisasi?jumlahBulan:1, bulanTerposting:0 };
+    DB.biaya.push(biayaObj);
+    if(amortisasi){
+      // bayar penuh sekarang -> masuk ke Biaya/Sewa Dibayar Dimuka (cari akun ALL milik sama kepemilikan dgn akun bayar, atau generic)
+      const prepaid = DB.coa.find(a=>a.kategori==='ALL' && a.kepemilikan===akunById(bayarId).kepemilikan) || DB.coa.find(a=>a.kategori==='ALL');
+      postJurnal({ tanggal:bTgl.value, keterangan:'Bayar dimuka: '+(bKet.value||akunById(bebanId).nama), debitId:prepaid.id, kreditId:bayarId, nominal, sumber:'Biaya', ref:'biaya-bayar-'+biayaObj.id });
+      biayaObj.prepaidId = prepaid.id;
+    } else {
+      postJurnal({ tanggal:bTgl.value, keterangan:biayaObj.keterangan||akunById(bebanId).nama, debitId:bebanId, kreditId:bayarId, nominal, sumber:'Biaya', ref:'biaya-'+biayaObj.id });
+    }
+    save(); renderContent(); toast('Biaya tersimpan');
+  });
+
+  c.querySelectorAll('.btnPostingAmor').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const b = DB.biaya.find(x=>x.id===btn.dataset.id);
+      const perBulan = Math.round(b.nominal / b.jumlahBulan);
+      postJurnal({ tanggal:todayStr(), keterangan:'Amortisasi bulan ke-'+(b.bulanTerposting+1)+': '+(b.keterangan||akunById(b.bebanId).nama), debitId:b.bebanId, kreditId:b.prepaidId, nominal:perBulan, sumber:'Biaya', ref:'biaya-amor-'+b.id+'-'+(b.bulanTerposting+1) });
+      b.bulanTerposting = (b.bulanTerposting||0)+1;
+      save(); renderContent(); toast('Amortisasi bulan ini diposting');
+    });
+  });
+};
+
+/* ================= PEMBELIAN ================= */
+RENDERERS.pembelian = function(c){
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Tanggal</label><input type="date" id="pTgl" value="${todayStr()}"></div>
+      <div class="field"><label>Dibayar melalui</label><select id="pBayar"><option value="">— pilih akun kas/bank —</option>${akunOptions(isKasBank)}</select></div>
+      <div class="field" style="grid-column:span 2"><label>Nama Barang (produk)</label>
+        <select id="pProduk"><option value="">— pilih produk —</option>${DB.produk.map(p=>`<option value="${p.id}">${p.nama} (${p.satuan})</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="formgrid">
+      <div class="field"><label>Qty</label><input type="number" id="pQty" placeholder="0"></div>
+      <div class="field"><label>Total Harga (Rp)</label><input type="number" id="pTotal" placeholder="0"></div>
+      <div class="field"><label>Qty rencana pemakaian (budgeting)</label><input type="number" id="pQtyPakai" placeholder="opsional"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn primary" id="btnAddProdukInline" style="width:100%">+ Produk baru cepat</button></div>
+    </div>
+    <button class="btn primary" id="btnPostPembelian">Simpan Pembelian</button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Riwayat Pembelian (${DB.pembelian.length})</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Dibayar melalui</th><th>Barang</th><th>Qty</th><th>Total Harga</th><th>Harga/satuan</th></tr></thead><tbody>
+  ${[...DB.pembelian].reverse().map(p=>{
+    const prod = DB.produk.find(x=>x.id===p.produkId);
+    return `<tr><td>${p.tanggal}</td><td>${akunById(p.bayarId)?.nama||'?'}</td><td>${prod?prod.nama:'(dihapus)'}</td><td class="num">${fmtNum(p.qty)}</td><td class="num">${fmtRp(p.total)}</td><td class="num">${fmtRp(p.total/p.qty)}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">Belum ada pembelian</td></tr>'}
+  </tbody></table></div></div>`;
+  c.innerHTML = html;
+
+  document.getElementById('btnAddProdukInline').addEventListener('click', ()=>{
+    const nama = prompt('Nama produk baru:'); if(!nama) return;
+    const satuan = (prompt('Satuan (pcs/gr):','pcs')||'pcs').trim();
+    const kategori='Bahan Mentah';
+    DB.produk.push({ id:uid(), kode:nextKode(prefixKategoriProduk(kategori)), nama, kategori, satuan: satuan==='gr'?'gr':'pcs', kepemilikan:'Pribadi', runQty:0, runTotal:0, hargaBeliPerSatuan:0, hargaJual:0, stok:0, hampirHabis:false, lokasi:'' });
+    save(); renderContent(); toast('Produk baru ditambahkan, silakan pilih di dropdown');
+  });
+
+  document.getElementById('btnPostPembelian').addEventListener('click', ()=>{
+    const bayarId=pBayar.value, produkId=pProduk.value, qty=Number(pQty.value), total=Number(pTotal.value);
+    if(!bayarId||!produkId) return toast('Lengkapi akun & produk');
+    if(!qty||qty<=0||!total||total<=0) return toast('Isi qty & total harga');
+    const prod = DB.produk.find(x=>x.id===produkId);
+    // update weighted average cost
+    prod.runQty = (prod.runQty||0) + qty;
+    prod.runTotal = (prod.runTotal||0) + total;
+    prod.hargaBeliPerSatuan = prod.runQty>0 ? (prod.runTotal/prod.runQty) : 0;
+    prod.stok = (prod.stok||0) + qty;
+
+    const pObj = { id:uid(), tanggal:pTgl.value, bayarId, produkId, qty, total, qtyPakai:Number(pQtyPakai.value)||0 };
+    DB.pembelian.push(pObj);
+
+    // jurnal: debit persediaan (kategori PS sesuai kepemilikan produk), kredit kas/bank
+    const persediaanAkun = DB.coa.find(a=>a.kategori==='PS' && a.kepemilikan===prod.kepemilikan) || DB.coa.find(a=>a.kategori==='PS');
+    postJurnal({ tanggal:pTgl.value, keterangan:'Pembelian '+prod.nama+' x'+qty, debitId:persediaanAkun.id, kreditId:bayarId, nominal:total, sumber:'Pembelian', ref:'pembelian-'+pObj.id });
+
+    // update budgeting realisasi jika ada baris budgeting yang match nama bahan & bulan sama
+    const bulan = pTgl.value.slice(0,7);
+    const bud = DB.budgeting.find(x=> x.produkId===produkId && x.tanggal.slice(0,7)===bulan);
+    if(bud){ bud.realisasi = (bud.realisasi||0) + total; }
+
+    save(); renderContent(); toast('Pembelian tersimpan, persediaan & kas terupdate');
+  });
+};
+
+/* ================= PENJUALAN / PEMAKAIAN ================= */
+RENDERERS.penjualan = function(c){
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Tanggal</label><input type="date" id="jlTgl" value="${todayStr()}"></div>
+      <div class="field" style="grid-column:span 2"><label>Menu (dari Resep)</label>
+        <select id="jlResep"><option value="">— pilih menu —</option>${DB.resep.map(r=>`<option value="${r.id}">${r.namaMenu}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Qty porsi terjual/dipakai</label><input type="number" id="jlQty" placeholder="0"></div>
+    </div>
+    <div class="mini" style="margin-bottom:10px">Nilai transaksi Rp0 (untuk konsumsi sendiri). Sistem otomatis mengurangi bahan sesuai resep dan mencatatnya sebagai Beban Pokok Penjualan.</div>
+    <button class="btn primary" id="btnPostPenjualan">Proses Penjualan / Pemakaian</button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Riwayat (${DB.penjualan.length})</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Menu</th><th>Qty</th><th>Nilai bahan terpakai</th></tr></thead><tbody>
+  ${[...DB.penjualan].reverse().map(p=>{
+    const r = DB.resep.find(x=>x.id===p.resepId);
+    return `<tr><td>${p.tanggal}</td><td>${r?r.namaMenu:'(resep dihapus)'}</td><td class="num">${fmtNum(p.qty)}</td><td class="num">${fmtRp(p.nilaiBahan)}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="empty">Belum ada transaksi</td></tr>'}
+  </tbody></table></div></div>`;
+  c.innerHTML = html;
+
+  document.getElementById('btnPostPenjualan').addEventListener('click', ()=>{
+    const resepId = jlResep.value, qty = Number(jlQty.value);
+    if(!resepId) return toast('Pilih menu');
+    if(!qty||qty<=0) return toast('Isi qty');
+    const resep = DB.resep.find(x=>x.id===resepId);
+    if(!resep || resep.bahan.length===0) return toast('Resep ini belum punya bahan — lengkapi dulu di Produk & Resep');
+
+    let nilaiBahan = 0;
+    let kepemilikanUtama = 'Pribadi';
+    const insufficient = [];
+    resep.bahan.forEach(b=>{
+      const prod = DB.produk.find(x=>x.id===b.produkId);
+      if(!prod) return;
+      const pakai = b.qty*qty;
+      if(prod.stok < pakai) insufficient.push(prod.nama);
+    });
+    if(insufficient.length){ if(!confirm('Stok tidak cukup untuk: '+insufficient.join(', ')+'. Tetap lanjutkan (stok bisa minus)?')) return; }
+
+    resep.bahan.forEach(b=>{
+      const prod = DB.produk.find(x=>x.id===b.produkId);
+      if(!prod) return;
+      const pakai = b.qty*qty;
+      prod.stok = (prod.stok||0) - pakai;
+      nilaiBahan += pakai * (prod.hargaBeliPerSatuan||0);
+      kepemilikanUtama = prod.kepemilikan;
+    });
+
+    const pObj = { id:uid(), tanggal:jlTgl.value, resepId, qty, nilaiBahan:Math.round(nilaiBahan) };
+    DB.penjualan.push(pObj);
+
+    if(nilaiBahan>0){
+      const bppAkun = DB.coa.find(a=>a.kategori==='BPP' && a.kepemilikan===kepemilikanUtama) || DB.coa.find(a=>a.kategori==='BPP');
+      const persediaanAkun = DB.coa.find(a=>a.kategori==='PS' && a.kepemilikan===kepemilikanUtama) || DB.coa.find(a=>a.kategori==='PS');
+      postJurnal({ tanggal:jlTgl.value, keterangan:'Pemakaian bahan: '+resep.namaMenu+' x'+qty, debitId:bppAkun.id, kreditId:persediaanAkun.id, nominal:Math.round(nilaiBahan), sumber:'Penjualan', ref:'penjualan-'+pObj.id });
+    }
+    save(); renderContent(); toast('Persediaan & beban pokok terupdate');
+  });
+};
+
+/* ================= PERSEDIAAN ================= */
+RENDERERS.persediaan = function(c){
+  let html = `<div class="section-title"><h3>Kartu Stok (${DB.produk.length} item)</h3><span class="hint">Tandai lokasi & status stok langsung di tabel</span></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr>
+    <th>Kode</th><th>Nama</th><th>Kategori</th><th>Kepemilikan</th><th>Lokasi</th><th>Stok</th><th>Satuan</th><th>Harga/satuan</th><th>Nilai Stok</th><th>⚠ Akan habis</th>
+  </tr></thead><tbody>`;
+  DB.produk.forEach(p=>{
+    html += `<tr data-id="${p.id}">
+      <td class="mini">${p.kode}</td>
+      <td>${p.nama}</td>
+      <td><span class="mini">${p.kategori}</span></td>
+      <td><span class="tag ${tagClassKep(p.kepemilikan)}">${p.kepemilikan}</span></td>
+      <td><select class="ed-lokasi"><option value="">— pilih lokasi —</option>${LOKASI_ALL.map(l=>`<option ${p.lokasi===l?'selected':''}>${l}</option>`).join('')}</select></td>
+      <td class="num">${fmtNum(p.stok)}</td>
+      <td>${p.satuan}</td>
+      <td class="num">${fmtRp(p.hargaBeliPerSatuan||0)}</td>
+      <td class="num">${fmtRp((p.stok||0)*(p.hargaBeliPerSatuan||0))}</td>
+      <td class="center"><input type="checkbox" class="ed-habis" ${p.hampirHabis?'checked':''}></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  // rekap per lokasi
+  const byLokasi = {};
+  DB.produk.forEach(p=>{ if(p.lokasi){ (byLokasi[p.lokasi] = byLokasi[p.lokasi]||[]).push(p); } });
+  html += `<div class="grid cols-3" style="margin-top:16px">`;
+  Object.keys(byLokasi).sort().forEach(loc=>{
+    const items = byLokasi[loc];
+    html += `<div class="card loc-block"><h4>${loc}</h4>${items.map(p=>`<span class="chip ${p.hampirHabis?'low':''}">${p.nama}: ${fmtNum(p.stok)} ${p.satuan}</span>`).join('')}</div>`;
+  });
+  if(Object.keys(byLokasi).length===0) html += `<div class="mini">Belum ada produk yang diberi lokasi.</div>`;
+  html += `</div>`;
+
+  const totalNilai = DB.produk.reduce((s,p)=>s+(p.stok||0)*(p.hargaBeliPerSatuan||0),0);
+  html += `<div class="recap"><div>Total nilai persediaan: <b>${fmtRp(totalNilai)}</b></div><div>Item ditandai akan habis: <b>${DB.produk.filter(p=>p.hampirHabis).length}</b></div></div>`;
+
+  c.innerHTML = html;
+  c.querySelectorAll('tr[data-id]').forEach(row=>{
+    const p = DB.produk.find(x=>x.id===row.dataset.id);
+    row.querySelector('.ed-lokasi').addEventListener('change', e=>{ p.lokasi=e.target.value; save(); renderContent(); });
+    row.querySelector('.ed-habis').addEventListener('change', e=>{ p.hampirHabis=e.target.checked; save(); renderContent(); });
+  });
+};
+
+/* ================= BUDGETING ================= */
+RENDERERS.budgeting = function(c){
+  let html = `<div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Bulan</label><input type="month" id="udBulan" value="${todayStr().slice(0,7)}"></div>
+      <div class="field" style="grid-column:span 2"><label>Bahan</label><select id="udProduk"><option value="">— pilih produk —</option>${DB.produk.map(p=>`<option value="${p.id}">${p.nama}</option>`).join('')}</select></div>
+      <div class="field"><label>Budget (Rp)</label><input type="number" id="udBudget" placeholder="0"></div>
+    </div>
+    <button class="btn primary" id="btnAddBudget">Tambah Anggaran</button>
+  </div>
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Anggaran vs Realisasi</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Bulan</th><th>Bahan</th><th>Budget</th><th>Realisasi</th><th>Selisih</th><th>%</th><th></th></tr></thead><tbody>`;
+  [...DB.budgeting].reverse().forEach(b=>{
+    const prod = DB.produk.find(p=>p.id===b.produkId);
+    const selisih = (b.budget||0) - (b.realisasi||0);
+    const pct = b.budget? Math.round((b.realisasi||0)/b.budget*100) : 0;
+    html += `<tr data-id="${b.id}"><td>${b.tanggal.slice(0,7)}</td><td>${prod?prod.nama:'(dihapus)'}</td><td class="num">${fmtRp(b.budget)}</td><td class="num">${fmtRp(b.realisasi||0)}</td><td class="num" style="color:${selisih<0?'var(--kredit)':'var(--debit)'}">${fmtRp(selisih)}</td><td class="num">${pct}%</td><td><button class="btn small danger btnDelBud">Hapus</button></td></tr>`;
+  });
+  if(DB.budgeting.length===0) html += `<tr><td colspan="7" class="empty">Belum ada anggaran</td></tr>`;
+  html += `</tbody></table></div></div>`;
+  c.innerHTML = html;
+
+  document.getElementById('btnAddBudget').addEventListener('click', ()=>{
+    const produkId = udProduk.value, budget = Number(udBudget.value);
+    if(!produkId||!budget) return toast('Lengkapi data');
+    DB.budgeting.push({ id:uid(), tanggal: udBulan.value+'-01', produkId, budget, realisasi:0 });
+    save(); renderContent(); toast('Anggaran ditambahkan');
+  });
+  c.querySelectorAll('.btnDelBud').forEach(btn=> btn.addEventListener('click', ()=>{
+    DB.budgeting = DB.budgeting.filter(b=>b.id!==btn.closest('tr').dataset.id); save(); renderContent();
+  }));
+};
+
+/* ================= NERACA ================= */
+RENDERERS.neraca = function(c){
+  const asetKat = ['AL','PS','ALL','AT','KAT','ALN'];
+  const kewajibanKat = ['KW'];
+  let html = `<div class="two-col">`;
+
+  // ---- ASET ----
+  html += `<div class="card"><h3 style="margin-bottom:12px">Aset</h3>`;
+  let totalAsetAll = 0;
+  asetKat.forEach(kat=>{
+    const akunsKat = DB.coa.filter(a=>a.kategori===kat);
+    if(akunsKat.length===0) return;
+    const subtotal = akunsKat.reduce((s,a)=>s+saldoAkun(a.id),0);
+    totalAsetAll += subtotal;
+    html += `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:12.8px;color:var(--terracotta-dark);margin-bottom:4px">${KAT[kat]} <span class="mini" style="font-weight:400">— ${fmtRp(subtotal)}</span></div>`;
+    KEPEMILIKAN.forEach(kep=>{
+      const list = akunsKat.filter(a=>a.kepemilikan===kep && saldoAkun(a.id)!==0);
+      if(list.length===0) return;
+      html += `<div class="mini" style="margin:4px 0 2px;font-weight:600">${kep}</div>`;
+      list.forEach(a=> html += `<div style="display:flex;justify-content:space-between;padding:2px 0 2px 10px;font-size:12.8px"><span>${a.nama}</span><span class="num">${fmtRp(saldoAkun(a.id))}</span></div>`);
+    });
+    html += `</div>`;
+  });
+  html += `<div style="border-top:2px solid var(--ink);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;font-family:Poppins;font-weight:700"><span>Total Aset</span><span>${fmtRp(totalAsetAll)}</span></div></div>`;
+
+  // ---- KEWAJIBAN + MODAL ----
+  html += `<div class="card"><h3 style="margin-bottom:12px">Kewajiban & Modal</h3>`;
+  let totalKW = 0;
+  kewajibanKat.forEach(kat=>{
+    const akunsKat = DB.coa.filter(a=>a.kategori===kat);
+    const subtotal = akunsKat.reduce((s,a)=>s+saldoAkun(a.id),0);
+    totalKW += subtotal;
+    html += `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:12.8px;color:var(--terracotta-dark);margin-bottom:4px">${KAT[kat]} <span class="mini" style="font-weight:400">— ${fmtRp(subtotal)}</span></div>`;
+    KEPEMILIKAN.forEach(kep=>{
+      const list = akunsKat.filter(a=>a.kepemilikan===kep && saldoAkun(a.id)!==0);
+      if(list.length===0) return;
+      html += `<div class="mini" style="margin:4px 0 2px;font-weight:600">${kep}</div>`;
+      list.forEach(a=> html += `<div style="display:flex;justify-content:space-between;padding:2px 0 2px 10px;font-size:12.8px"><span>${a.nama}</span><span class="num">${fmtRp(saldoAkun(a.id))}</span></div>`);
+    });
+    html += `</div>`;
+  });
+  html += `<div style="display:flex;justify-content:space-between;font-size:12.8px;padding:4px 0;font-weight:700"><span>Total Kewajiban</span><span>${fmtRp(totalKW)}</span></div>`;
+
+  html += `<div style="font-weight:700;font-size:12.8px;color:var(--terracotta-dark);margin:14px 0 4px">Modal</div>`;
+  let totalMD = 0;
+  KEPEMILIKAN.forEach(kep=>{
+    const akunsMD = DB.coa.filter(a=>a.kategori==='MD' && a.kepemilikan===kep);
+    const saldoAwal = akunsMD.reduce((s,a)=>s+saldoAkun(a.id),0);
+    const laba = labaRugiPerKepemilikan(kep);
+    const totalKep = saldoAwal + laba;
+    totalMD += totalKep;
+    html += `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12.8px"><span>Modal ${kep} (termasuk laba berjalan)</span><span class="num">${fmtRp(totalKep)}</span></div>`;
+  });
+  html += `<div style="border-top:2px solid var(--ink);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;font-family:Poppins;font-weight:700"><span>Total Kewajiban + Modal</span><span>${fmtRp(totalKW+totalMD)}</span></div>`;
+
+  const selisih = totalAsetAll - (totalKW+totalMD);
+  html += `<div style="margin-top:12px;text-align:right"><span class="badge-balance ${Math.abs(selisih)<1?'ok':'bad'}">${Math.abs(selisih)<1?'✓ Neraca Seimbang':'⚠ Selisih '+fmtRp(selisih)}</span></div>`;
+  html += `</div></div>`;
+  c.innerHTML = html;
+};
+
+/* ================= LABA RUGI ================= */
+RENDERERS.labarugi = function(c){
+  let html = `<div class="grid cols-4" style="margin-bottom:14px">`;
+  KEPEMILIKAN.forEach(kep=>{
+    const lr = labaRugiPerKepemilikan(kep);
+    html += `<div class="card kpi"><div class="label">${kep}</div><div class="value ${lr>=0?'pos':'neg'}">${fmtRp(lr)}</div></div>`;
+  });
+  html += `</div><div class="card">`;
+  ['PD','BPP','BO','BL'].forEach(kat=>{
+    const akunsKat = DB.coa.filter(a=>a.kategori===kat);
+    const subtotal = akunsKat.reduce((s,a)=>s+saldoAkun(a.id),0);
+    html += `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;color:var(--terracotta-dark);border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:6px"><span>${KAT[kat]}</span><span>${fmtRp(subtotal)}</span></div>`;
+    KEPEMILIKAN.forEach(kep=>{
+      const list = akunsKat.filter(a=>a.kepemilikan===kep && saldoAkun(a.id)!==0);
+      if(list.length===0) return;
+      html += `<div class="mini" style="margin:4px 0 2px;font-weight:600">${kep}</div>`;
+      list.forEach(a=> html += `<div style="display:flex;justify-content:space-between;padding:2px 0 2px 10px;font-size:12.8px"><span>${a.nama}</span><span class="num">${fmtRp(saldoAkun(a.id))}</span></div>`);
+    });
+    html += `</div>`;
+  });
+  const totalPD = sumByKategoriKepemilikan('PD');
+  const totalBPP = sumByKategoriKepemilikan('BPP');
+  const totalBO = sumByKategoriKepemilikan('BO');
+  const totalBL = sumByKategoriKepemilikan('BL');
+  const net = totalPD-totalBPP-totalBO-totalBL;
+  html += `<div style="border-top:2px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;font-family:Poppins;font-weight:700;font-size:15px"><span>Laba/Rugi Bersih (semua entitas)</span><span class="${net>=0?'':'neg'}" style="color:${net>=0?'var(--debit)':'var(--kredit)'}">${fmtRp(net)}</span></div>`;
+  html += `</div>`;
+  c.innerHTML = html;
+};
+
+/* ================= PERUBAHAN MODAL ================= */
+RENDERERS.perubahanmodal = function(c){
+  let html = `<div class="tablewrap"><table class="sheet"><thead><tr><th>Entitas</th><th>Modal Awal</th><th>Laba Berjalan</th><th>Prive</th><th>Modal Akhir</th></tr></thead><tbody>`;
+  let tAwal=0,tLaba=0,tPrive=0,tAkhir=0;
+  KEPEMILIKAN.forEach(kep=>{
+    const modalAkun = DB.coa.filter(a=>a.kategori==='MD' && a.kepemilikan===kep && !a.nama.startsWith('Prive'));
+    const priveAkun = DB.coa.filter(a=>a.kategori==='MD' && a.kepemilikan===kep && a.nama.startsWith('Prive'));
+    const modalAwal = modalAkun.reduce((s,a)=>s+saldoAkun(a.id),0);
+    const laba = labaRugiPerKepemilikan(kep);
+    const prive = priveAkun.reduce((s,a)=>s+saldoAkun(a.id),0);
+    const akhir = modalAwal + laba - prive;
+    tAwal+=modalAwal; tLaba+=laba; tPrive+=prive; tAkhir+=akhir;
+    html += `<tr><td><span class="tag ${tagClassKep(kep)}">${kep}</span></td><td class="num">${fmtRp(modalAwal)}</td><td class="num">${fmtRp(laba)}</td><td class="num">${fmtRp(prive)}</td><td class="num" style="font-weight:700">${fmtRp(akhir)}</td></tr>`;
+  });
+  html += `<tr style="font-weight:700"><td>Total</td><td class="num">${fmtRp(tAwal)}</td><td class="num">${fmtRp(tLaba)}</td><td class="num">${fmtRp(tPrive)}</td><td class="num">${fmtRp(tAkhir)}</td></tr>`;
+  html += `</tbody></table></div><div class="mini" style="margin-top:10px">Prive dicatat lewat Jurnal Umum / Kirim Uang dengan akun lawan "Prive [Entitas]".</div>`;
+  c.innerHTML = html;
+};
+
+/* ================= ARUS KAS ================= */
+RENDERERS.aruskas = function(c){
+  const kasIds = new Set(DB.coa.filter(a=>a.kategori==='AL').map(a=>a.id));
+  const groups = { Operasional:0, Investasi:0, Pendanaan:0 };
+  const rows = [];
+  DB.jurnal.forEach(j=>{
+    const debitKas = kasIds.has(j.debitId), kreditKas = kasIds.has(j.kreditId);
+    if(!debitKas && !kreditKas) return;
+    if(debitKas && kreditKas) return; // transfer internal, netral
+    const lawanId = debitKas? j.kreditId : j.debitId;
+    const lawan = akunById(lawanId);
+    const arah = debitKas? 1 : -1; // masuk / keluar
+    let kelompok = 'Operasional';
+    if(lawan){
+      if(['AT','ALN'].includes(lawan.kategori)) kelompok='Investasi';
+      else if(['KW','MD'].includes(lawan.kategori)) kelompok='Pendanaan';
+      else kelompok='Operasional';
+    }
+    groups[kelompok] += arah*j.nominal;
+    rows.push({...j, arah, kelompok, lawanNama: lawan?lawan.nama:'?'});
+  });
+  const totalKas = groups.Operasional+groups.Investasi+groups.Pendanaan;
+  let html = `<div class="grid cols-3">
+    <div class="card kpi"><div class="label">Aktivitas Operasional</div><div class="value ${groups.Operasional>=0?'pos':'neg'}">${fmtRp(groups.Operasional)}</div></div>
+    <div class="card kpi"><div class="label">Aktivitas Investasi</div><div class="value ${groups.Investasi>=0?'pos':'neg'}">${fmtRp(groups.Investasi)}</div></div>
+    <div class="card kpi"><div class="label">Aktivitas Pendanaan</div><div class="value ${groups.Pendanaan>=0?'pos':'neg'}">${fmtRp(groups.Pendanaan)}</div></div>
+  </div>
+  <div class="card kpi" style="margin-top:14px;max-width:320px"><div class="label">Kenaikan (Penurunan) Kas Bersih</div><div class="value ${totalKas>=0?'pos':'neg'}">${fmtRp(totalKas)}</div></div>
+  <div class="card" style="margin-top:14px">
+  <div class="section-title"><h3>Rincian Pergerakan Kas</h3></div>
+  <div class="tablewrap"><table class="sheet"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kelompok</th><th>Akun Lawan</th><th>Arah</th><th>Nominal</th></tr></thead><tbody>
+  ${rows.length? [...rows].reverse().map(r=>`<tr><td>${r.tanggal}</td><td>${r.keterangan||'-'}</td><td>${r.kelompok}</td><td>${r.lawanNama}</td><td>${r.arah>0?'Masuk':'Keluar'}</td><td class="num" style="color:${r.arah>0?'var(--debit)':'var(--kredit)'}">${fmtRp(r.arah*r.nominal)}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">Belum ada pergerakan kas</td></tr>'}
+  </tbody></table></div></div>
+  <div class="mini" style="margin-top:8px">Pengelompokan otomatis: Investasi = lawan akun Aset Tetap/Aset Lainnya, Pendanaan = lawan akun Kewajiban/Modal, sisanya Operasional.</div>`;
+  c.innerHTML = html;
+};
+
+/* ================= EXPORT / IMPORT / INIT ================= */
+function initApp(){
+  load();
+  renderNav();
+  switchTab('dashboard');
+
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'inspira-ledger-backup-'+todayStr()+'.json';
+    a.click(); URL.revokeObjectURL(url);
+    toast('Backup diunduh');
+  });
+  document.getElementById('btnImport').addEventListener('click', ()=> document.getElementById('fileImport').click());
+  document.getElementById('fileImport').addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      try{
+        const data = JSON.parse(ev.target.result);
+        if(!data.coa) throw new Error('format tidak dikenali');
+        if(!confirm('Restore akan menimpa semua data saat ini. Lanjutkan?')) return;
+        DB = data; save(); switchTab('dashboard'); toast('Data berhasil di-restore');
+      }catch(err){ toast('File tidak valid: '+err.message); }
+    };
+    reader.readAsText(file);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+
+</script>
+<script>
+  // Register service worker for offline support (PWA)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+  // Optional: show a lightweight "Install app" button when the browser allows it
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.createElement('button');
+    btn.textContent = '⬇ Install Aplikasi';
+    btn.className = 'btn primary';
+    btn.style.marginRight = '8px';
+    btn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      btn.remove();
+    });
+    const actions = document.getElementById('topbar-actions');
+    if (actions) actions.prepend(btn);
+  });
+</script>
+</body>
+</html>
